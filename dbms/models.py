@@ -45,10 +45,14 @@ class User(db.Model):
 
     user_id = db.Column(db.Integer, primary_key=True)
     locale = db.Column(db.String, nullable=False)
+    name = db.Column(db.String, nullable=False)
+    gender = db.Column(db.String, nullable=False)
 
-    def __init__(self, user_id, locale):
+    def __init__(self, user_id, locale, name, gender):
         self.user_id = user_id
         self.locale = locale
+        self.name = name
+        self.gender = gender
 
     def __repr__(self):
-        return u"User user_id:{}, locale:{}".format(self.user_id, self.locale)
+        return u"User user_id:{}, locale:{}, name:{}, gender:{}".format(self.user_id, self.locale, self.name, self.gender)
