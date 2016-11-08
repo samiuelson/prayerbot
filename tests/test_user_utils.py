@@ -5,7 +5,7 @@ import unittest
 
 from facebook import user_utils
 
-user_id = "1282323984273"
+user_id = "1282323984272"
 
 class JSONData():
     def __init__(self, data):
@@ -18,26 +18,35 @@ class FacebookUserUtilsTestSuite(unittest.TestCase):
 
     @mock.patch('requests.get')
     def test_user_name(self, mock_get):
+        user_id = "1282323984273"
         mock_get.return_value = JSONData({"id": user_id, "name": "john"})
         assert "john" == user_utils.user_name(user_id)
 
     @mock.patch('requests.get')
     def test_user_name_with_first_name(self, mock_get):
+        # everytime this must be different user_id
+        user_id = "1282323984274"
         mock_get.return_value = JSONData({"id": user_id, "name": "john", "first_name": "John"})
         assert "John" == user_utils.user_name(user_id)
 
     @mock.patch('requests.get')
     def test_user_name_with_complex_name(self, mock_get):
+        # everytime this must be different user_id
+        user_id = "1282323984275"
         mock_get.return_value = JSONData({"id": user_id, "name": "Mark William"})
         assert "Mark" == user_utils.user_name(user_id)
 
     @mock.patch('requests.get')
     def test_user_locale(self, mock_get):
+        # everytime this must be different user_id
+        user_id = "1282323984276"
         mock_get.return_value = JSONData({"id": user_id, "name": "john", "locale": "de_DE"})
         assert "de_DE" == user_utils.locale(user_id)
 
     @mock.patch('requests.get')
     def test_user_default_locale(self, mock_get):
+        # everytime this must be different user_id
+        user_id = "1282323984277"
         mock_get.return_value = JSONData({"id": user_id, "name": "john"})
         assert "pl_PL" == user_utils.locale(user_id)
 
@@ -54,10 +63,14 @@ class FacebookUserUtilsTestSuite(unittest.TestCase):
 
     @mock.patch('requests.get')
     def test_user_gender(self, mock_get):
+        # everytime this must be different user_id
+        user_id = "1282323984278"
         mock_get.return_value = JSONData({"id": user_id, "name": "jane", "gender": "female"})
         assert "female" == user_utils.gender(user_id)
 
     @mock.patch('requests.get')
     def test_user_default_gender(self, mock_get):
+        # everytime this must be different user_id
+        user_id = "1282323984279"
         mock_get.return_value = JSONData({"id": user_id, "name": "john"})
         assert "male" == user_utils.gender(user_id)
