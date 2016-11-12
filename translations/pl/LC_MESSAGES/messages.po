@@ -205,3 +205,6 @@ msgstr "Użytkownik %(name)s chce Ci podziękować za Twoją modlitwę w intencj
 
 msgid "Send thank you"
 msgstr "Podziękuj"
+
+msgid "Someone is already praying in this intention."
+msgstr "W tej intencji już się ktoś modli."

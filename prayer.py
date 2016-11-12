@@ -159,6 +159,7 @@ class PrayerWebhook(object):
             int_cnt = Intent.query.filter(Intent.user_id == sender_id).count()
 
             if int_cnt < max_intentions:
+                # Adding empty description
                 intent = Intent(sender_id, '')
                 intent.ts = int(time.time())
                 db.session.add(intent)
@@ -174,9 +175,15 @@ class PrayerWebhook(object):
             pray_cnt = Intent.query.filter(Intent.commiter_id == sender_id ).count()
 
             if pray_cnt < max_prayers:
-                prayers = Intent.query.filter(Intent.commiter_id == 0 ).filter(Intent.user_id != sender_id).limit(displayed_prayers_limit).all()
 
-                prayer_elements = map(map_prayer, prayers)
+                # Filters to apply:
+                # 1. No commiter yet
+                # 2. Intention confirmed - description != ''
+                # 3. User_id != sender_id
+                #prayers = Intent.query.filter(Intent.commiter_id == 0 ).filter(Intent.description != '').filter(Intent.user_id != sender_id).limit(displayed_prayers_limit).all()
+                #prayer_elements = map(map_prayer, prayers)
+
+                prayer_elements = prayers_list(sender_id)
 
                 if prayer_elements == []:
                     return {
@@ -271,13 +278,22 @@ class PrayerWebhook(object):
             #.encode('utf-8')
 
             if event == PrayerEvent.I_PRAY:
-                intent.commiter_id = sender_id
-                return {
-                    # This is dictionary - no duplicates allowed
-                    # When user_id == sender_id then only second message will be send
-                    sender_id : utils.response_text(user_gettext(sender_id, u"You're subscribed for the prayer request from user %(name)s", name=user_name)),
-                    user_id : utils.response_text(user_gettext(user_id, u"User %(name)s will be praying in your following request: %(desc)s", name=sender_name, desc=intent_description)),
-                }
+                if intent.commiter_id > 0:
+                    # Send information that someone is already praying in this intention
+                    return {
+                        # This is dictionary - no duplicates allowed
+                        # When user_id == sender_id then only second message will be send
+                        sender_id : utils.response_text(user_gettext(sender_id, u"Someone is already praying in this intention.")),
+                    }
+                else:
+                    intent.commiter_id = sender_id
+                    return {
+                        # This is dictionary - no duplicates allowed
+                        # When user_id == sender_id then only second message will be send
+                        sender_id : utils.response_text(user_gettext(sender_id, u"You're subscribed for the prayer request from user %(name)s", name=user_name)),
+                        user_id : utils.response_text(user_gettext(user_id, u"User %(name)s will be praying in your following request: %(desc)s", name=sender_name, desc=intent_description)),
+                    }
+
             elif event == PrayerEvent.DID_PRAY:
                 # Should confirmed prayer be deleted or just marked as confirmed and deleted separatelly
                 # by scheduled script ?
@@ -323,16 +339,54 @@ def map_callback(callback):
 def map_prayer(prayer):
     user_id = prayer.user_id
     return {
-        'title': user_utils.user_name(user_id),
-        'subtitle': prayer.description,
+        # Intention should be better visible as a title
+        'title': prayer.description,
+        'subtitle': user_utils.user_name(user_id),
         'buttons': [
             {
+                # It should be in language of sender and not user who send this intention
                 'title': user_gettext(user_id, u"I am praying"),
                 'payload': PrayerEvent.payload(PrayerEvent.I_PRAY, prayer.id, user_id)
             }
         ],
         'image_url': user_utils.img_url(user_id)
     }
+
+def prayers_list( sender_id ):
+
+    elements = None
+
+    # Filters to apply:
+    # 1. No commiter yet
+    # 2. Intention confirmed - description != ''
+    # 3. User_id != sender_id
+    for prayer in Intent.query.filter(Intent.commiter_id == 0).filter(Intent.description != '').filter(
+                    Intent.user_id != sender_id).limit(displayed_prayers_limit).all():
+
+        user_id = prayer.user_id
+
+        single_bubble_button = {
+            # Intention should be better visible as a title
+            'title': prayer.description,
+            'subtitle': user_utils.user_name(user_id),
+            'buttons': [
+                {
+                    # It should be in language of sender and not user who send this intention
+                    'title': user_gettext(sender_id, u"I am praying"),
+                    'payload': PrayerEvent.payload(PrayerEvent.I_PRAY, prayer.id, user_id)
+                }
+            ],
+            'image_url': user_utils.img_url(user_id)
+        }
+
+    if elements:
+        elements.append(single_bubble_button)
+    else:
+        elements = [single_bubble_button]
+
+
+    return elements
+
 
 def map_said_prayer_multiple_bubbles(sender_id):
 
@@ -354,17 +408,20 @@ def map_said_prayer_multiple_bubbles(sender_id):
                     "buttons": [
                         {
                             'type' : "postback",
-                            'title': user_gettext(user_id, u"I've prayed"),
+                            # It should be in language of sender and not user who send this intention
+                            'title': user_gettext(sender_id, u"I've prayed"),
                             'payload': PrayerEvent.payload(PrayerEvent.DID_PRAY, prayer.id, user_id)
                         },
                         {
                             'type': "postback",
-                            'title': user_gettext(user_id, u"Ensure about your prayer"),
+                            # It should be in language of sender and not user who send this intention
+                            'title': user_gettext(sender_id, u"Ensure about your prayer"),
                             'payload': PrayerEvent.payload(PrayerEvent.ENSURE_PRAY, prayer.id, user_id)
                         },
                         {
                             'type': "postback",
-                            'title': user_gettext(user_id, u"Stop your prayer"),
+                            # It should be in language of sender and not user who send this intention
+                            'title': user_gettext(sender_id, u"Stop your prayer"),
                             'payload': PrayerEvent.payload(PrayerEvent.GIVE_UP, prayer.id, user_id)
                         },
                     ]
